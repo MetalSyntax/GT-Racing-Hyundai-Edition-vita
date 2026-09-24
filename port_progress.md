@@ -254,3 +254,12 @@ tras `JNI_OnLoad`, y build + prueba en consola real.
   equivocada). Por eso solo se veían las letras amarillas y la pista.
 - **Fix:** `UNPURE_TEXCOORDS=1` en `VITAGL_MAKE_FLAGS` ("legal multitexturing with GL_TEXTURE0 disabled")
   + `FFP_SHADER_CACHE_MAGIC` 28→29 para descartar los .gxp mal generados. Pendiente de consola.
+
+### Pedales ocultos + estado de la pantalla blanca (2026-09-24)
+- **Confirmado en consola:** `UNPURE_TEXCOORDS=1` NO arregló la pantalla de carga blanca y no se generó
+  ningún `ffp_fail_*.txt` → no es un fallo de compilación de shaders. Se mantiene el flag (corrige el
+  shader inválido `texenv0` de 013.log) pero la causa de la pantalla blanca sigue abierta.
+- **Pedales en pantalla ocultos:** `input.c` llama cada frame a
+  `RenderFX::SetAlpha(*(g_pMainGameClass)+0x1b00, "HUD.AccelBrake", 0)`. Alpha 0 en vez de
+  `SetVisible(false)` para que el hit-test de gameswf siga aceptando los toques simulados de L/R.
+- README/RELEASE_NOTES: esquema recomendado = controles en pantalla; único issue abierto = pantalla blanca.

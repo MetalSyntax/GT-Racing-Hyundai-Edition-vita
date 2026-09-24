@@ -6,6 +6,8 @@
 #include "utils/input.h"
 #include "utils/logger.h"
 
+#include <so_util/so_util.h>
+
 #include <psp2/ctrl.h>
 #include <psp2/touch.h>
 #include <string.h>
@@ -217,9 +219,40 @@ static void poll_pad_and_controls(void *env) {
     s_prev_buttons = now;
 }
 
+/*
+ * Pedales en pantalla invisibles: los botones físicos ya accionan freno/acelerador
+ * (toques simulados sobre btnBrake/btnAccel). Se usa alpha 0 y NO SetVisible(false)
+ * porque gameswf descarta los caracteres invisibles en el hit-test y los toques
+ * simulados dejarían de llegar. RenderFX del HUD en *(g_pMainGameClass) + 0x1b00
+ * (Ghidra: RenderFX::SetVisible(*(RenderFX **)(g_pMainGameClass + 0x1b00), "HUD.AccelBrake", ...)).
+ * SetAlpha es seguro si el caracter no existe (Find devuelve NULL).
+ */
+extern so_module so_mod;
+typedef void (*fn_RenderFX_SetAlpha)(void *self, const char *name, float alpha);
+static void **s_pMainGameClass = NULL;
+static fn_RenderFX_SetAlpha s_RenderFX_SetAlpha = NULL;
+static int s_hud_syms = 0;
+
+static void hide_pedal_buttons(void) {
+    if (!s_hud_syms) {
+        s_hud_syms = 1;
+        s_pMainGameClass = (void **)so_symbol(&so_mod, "g_pMainGameClass");
+        s_RenderFX_SetAlpha = (fn_RenderFX_SetAlpha)so_symbol(&so_mod, "_ZN8RenderFX8SetAlphaEPKcf");
+        l_info("input: pedales en pantalla ocultos (alpha 0) -- g_pMainGameClass=%p SetAlpha=%p",
+               s_pMainGameClass, s_RenderFX_SetAlpha);
+    }
+    if (!s_pMainGameClass || !s_RenderFX_SetAlpha) return;
+    uint8_t *game = (uint8_t *)*s_pMainGameClass;
+    if (!game) return;
+    void *hud = *(void **)(game + 0x1b00);
+    if (hud)
+        s_RenderFX_SetAlpha(hud, "HUD.AccelBrake", 0.0f);
+}
+
 void input_poll(void *env) {
     poll_real_touch();
     poll_pad_and_controls(env);
+    hide_pedal_buttons();
 }
 
 int input_touch_action(void) { return s_legacy_touch_action; }

@@ -37,13 +37,15 @@ The game boots, the menus work with touch and buttons, and the first license tes
 - **OBB read in place**: the 600 MB `main.100.*.obb` is read directly by the engine's ZIP reader, so there is no extraction step.
 - **vitaGL Graphics Pipeline**: GLES 1.1 fixed-function rendering at the Vita's native 960x544, including the texture combiner state used by the race post-effects (`glTexEnviv` / `glGetTexEnvfv`).
 - **Native Audio**: Gameloft's Vox engine mixes all SFX and music in software and streams them through an emulated `android.media.AudioTrack`, backed by `sceAudioOut` (44.1 kHz stereo) with a dedicated output thread.
-- **Physical Controls**: analog stick / D-Pad steering, R/Cross accelerate, L/Square brake, Start pause, Circle back.
+- **Physical Controls**: analog stick / D-Pad steering, R/Cross accelerate, L/Square brake, Start pause, Circle back, all driving the on-screen controls (pedal buttons hidden).
 - **Offline-safe**: Gameloft tracking, ads and online services are neutralized or fail fast, so the game never waits on dead servers.
 - **Performance tweaks**: CPU at 444 MHz, audio threads moved off the main core, a pooled file-handle cache for the OBB/`Sounds.pak`, buffered logging, and vitaGL `DRAW_SPEEDHACK=2`.
 
 ---
 
 ### 🕹️ Controls
+
+> ⭐ **Recommended**: use the game's **on-screen controls** scheme (**Options → Controls**, touch / side buttons + pedals; it is the default in this port). The physical buttons drive those on-screen controls directly, so this is the scheme that works best. The brake and accelerator pedals are **hidden** (transparent) to keep the screen clean, but they still work from the buttons below.
 
 | Vita Input | Action |
 |---|---|
@@ -58,10 +60,7 @@ The game boots, the menus work with touch and buttons, and the first license tes
 
 ### ⚠️ Known Issues
 
-- **UI rendering**: a white/incomplete loading screen was fixed in this beta (texture unit 1 without unit 0). Please report any screen that still looks white or is missing elements.
-- **Framerate drops** during race loading and the first time each new material is drawn. vitaGL compiles those shaders at runtime and caches them in `ux0:data/shader_cache/`, so later sessions get faster.
-- **Online features** (Facebook, leaderboards, store, ads) are unavailable by design.
-- Only the English locale has been tested.
+- **White loading screen (only known open issue)**: before a race, the loading screen shows only the track map and the yellow titles. The background image, the dark translucent panel and the rest of the text do not appear, and the screen looks white. The race itself loads and plays. Still under investigation. Enabling vitaGL `UNPURE_TEXCOORDS` did not fix it, and no shader-compile failure dumps (`ffp_fail_*.txt`) are produced there, so it is not a shader-compilation error.
 
 ---
 
