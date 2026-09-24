@@ -327,7 +327,7 @@ extern int NEW_DISPLAY_HEIGHT; // Requested new display height in pixels
 #include "texture_callbacks.h"
 
 // Fixed-function pipeline shader cache settings
-#define FFP_SHADER_CACHE_MAGIC 28 // This must be increased whenever ffp shader sources or shader mask/combiner mask changes
+#define FFP_SHADER_CACHE_MAGIC 29 // [port GTRHE] 28->29: UNPURE_TEXCOORDS cambia las máscaras; invalida shaders mal generados. This must be increased whenever ffp shader sources or shader mask/combiner mask changes
 //#define DUMP_SHADER_SOURCES // Enable this flag to dump shader sources inside shader cache
 
 // Custom shaders pipeline shader cache settings

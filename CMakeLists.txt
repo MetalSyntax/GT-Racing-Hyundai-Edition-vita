@@ -104,7 +104,11 @@ add_executable(${CMAKE_PROJECT_NAME}
 add_subdirectory(lib/libc_bridge)
 add_dependencies(${CMAKE_PROJECT_NAME} SceLibcBridge)
 
-set(VITAGL_MAKE_FLAGS "SOFTFP_ABI=1 NO_DEBUG=1 HAVE_SHADER_CACHE=1 NO_SPLASHSCREEN=1 DRAW_SPEEDHACK=2 HAVE_SHARK_LOG=1")
+# UNPURE_TEXCOORDS=1: GameSWF/Lib3D dibujan con GL_TEXTURE1 activa y GL_TEXTURE0 apagada.
+# Sin esto vitaGL arma la máscara FFP con pass1 pero genera el shader con el modo de la
+# unidad 0 -> "undeclared identifier 'texenv0'" (013.log:3660) y fondo/panel/textos de la
+# pantalla de carga salen blancos o invisibles.
+set(VITAGL_MAKE_FLAGS "SOFTFP_ABI=1 NO_DEBUG=1 HAVE_SHADER_CACHE=1 NO_SPLASHSCREEN=1 DRAW_SPEEDHACK=2 HAVE_SHARK_LOG=1 UNPURE_TEXCOORDS=1")
 separate_arguments(VITAGL_MAKE_ARGS UNIX_COMMAND "${VITAGL_MAKE_FLAGS}")
 
 set(VITAGL_DIR ${CMAKE_SOURCE_DIR}/lib/vitagl)

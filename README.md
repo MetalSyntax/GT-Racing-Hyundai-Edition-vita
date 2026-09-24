@@ -58,7 +58,7 @@ The game boots, the menus work with touch and buttons, and the first license tes
 
 ### ⚠️ Known Issues
 
-- **White loading screen**: the loading screen before a race (track, objectives, "Loading") draws only its text over a white background. The race itself still loads. This beta includes diagnostics for it.
+- **UI rendering**: a white/incomplete loading screen was fixed in this beta (texture unit 1 without unit 0). Please report any screen that still looks white or is missing elements.
 - **Framerate drops** during race loading and the first time each new material is drawn. vitaGL compiles those shaders at runtime and caches them in `ux0:data/shader_cache/`, so later sessions get faster.
 - **Online features** (Facebook, leaderboards, store, ads) are unavailable by design.
 - Only the English locale has been tested.

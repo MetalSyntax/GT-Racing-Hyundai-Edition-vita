@@ -15,6 +15,7 @@ See [README.md](README.md) for requirements and installation.
 - **Freeze after the first mandatory tutorial choice**: `rewind`/`fseeko`/`ftello` were resolved to newlib while the game's `FILE*` come from SceLibc. The tracking-file copy loop never ended.
 - **Crash during the tutorial** (data abort in vitaGL `reload_ffp_shaders`): vitaGL now handles runtime shader-compile failures instead of copying from a NULL program.
 - **Texture-combiner state leaking after race post-effects**: implemented `glTexEnviv` and `glGetTexEnvfv`, which were no-ops.
+- **White loading screen / missing UI elements**: the game draws UI with texture unit 1 enabled and unit 0 disabled. vitaGL now supports this (`UNPURE_TEXCOORDS=1`); before, it built an invalid shader for those draws. The FFP shader cache version was bumped, so old cached shaders are ignored.
 - **Choppy / missing audio**: `AudioTrack` backend rewritten with a 4×1024-frame queue and its own output thread. `play`/`pause`/`stop` are now wired up.
 
 ### Performance (safe tweaks)
@@ -24,7 +25,7 @@ See [README.md](README.md) for requirements and installation.
 - CPU 444 MHz / GPU 222 MHz, vitaGL `DRAW_SPEEDHACK=2`, runtime shader cache in `ux0:data/shader_cache/`.
 
 ### Known issues
-- The loading screen before a race shows only its text over a white background (still under investigation; this build logs texture-upload diagnostics for it).
+- Loading-screen fix above not yet confirmed on every screen; please report any remaining white or missing UI.
 - Framerate drops while a race loads and the first time new materials appear (runtime shader compilation; they are cached afterwards).
 - Online features (Facebook, leaderboards, store, ads) are not available.
 

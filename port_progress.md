@@ -245,3 +245,12 @@ tras `JNI_OnLoad`, y build + prueba en consola real.
   sin `l_debug`. No se agregaron flags *SPEEDHACK de vitaGL marcados "may cause crashes".
 - **Release:** README estandarizado, `RELEASE_NOTES.md`, primer commit, paquete
   `release/GTRacingHyundaiEdition-Vita-v0.1.0-beta.zip` (VPK del build de release).
+
+### Pantalla blanca — causa real encontrada (013.log:3660)
+- vitaShaRK: `unexpected undeclared identifier 'texenv0'. Did you mean 'texenv4'?` (mask 200C00C9).
+- En `reload_ffp_shaders` sin `HAVE_UNPURE_TEXCOORDS`, `base_texture_id` es 0 fijo: si solo está activa
+  GL_TEXTURE1, la máscara guarda el modo en `pass1` y deja `pass0`=MODULATE, pero el generador toma el
+  modo de la unidad 0 (REPLACE) → shader inválido (o, con el fallback, muestreando la unidad
+  equivocada). Por eso solo se veían las letras amarillas y la pista.
+- **Fix:** `UNPURE_TEXCOORDS=1` en `VITAGL_MAKE_FLAGS` ("legal multitexturing with GL_TEXTURE0 disabled")
+  + `FFP_SHADER_CACHE_MAGIC` 28→29 para descartar los .gxp mal generados. Pendiente de consola.
