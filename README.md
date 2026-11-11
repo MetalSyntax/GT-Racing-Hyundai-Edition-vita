@@ -79,16 +79,22 @@ The game boots, the menus work with touch and buttons, and the first license tes
 1. Install `gtracinghyundaiedition.vpk` on your PS Vita using **VitaShell**.
 2. Open the `.apk` as a ZIP archive and extract `lib/armeabi/libGTRacing.so`.
 3. Copy `libGTRacing.so` to `ux0:data/gtracinghyundaiedition/`.
-4. Create `ux0:data/gtracinghyundaiedition/com.gameloft.android.ANMP.GloftGTHY/` and copy the OBB file into it, keeping its original name.
-5. Launch the game from your LiveArea.
+4. From the same `.apk`, copy the whole `assets/` and `res/` folders to `ux0:data/gtracinghyundaiedition/` (keep the folder names and their contents as they are).
+5. Create `ux0:data/gtracinghyundaiedition/com.gameloft.android.ANMP.GloftGTHY/` and copy the OBB file into it, keeping its original name.
+6. Launch the game from your LiveArea.
+
+> **First launch:** the game unpacks some files from the OBB into `ux0:data/gtracinghyundaiedition/` (`Sounds.pak` alone is ~115 MB), so the first start takes longer. Let it finish and don't close it during the first loading screen.
 
 ### Final File Structure in `ux0:data/gtracinghyundaiedition/`
 
 ```text
 ux0:data/gtracinghyundaiedition/
 ├── libGTRacing.so                                    <- from lib/armeabi/ in the APK
+├── assets/                                           <- from the APK (*.inject files)
+├── res/                                              <- from the APK (raw/, drawable/, layout/, ...)
 ├── com.gameloft.android.ANMP.GloftGTHY/
 │   └── main.100.com.gameloft.android.ANMP.GloftGTHY.obb   <- game data (~600 MB)
+├── Sounds.pak, Quest.dat, eventParameters.xml, ...   <- unpacked by the game on first launch
 ├── saves/                                            <- created by the game
 └── logs/                                             <- 001.log, 002.log, ... (created by the port)
 ```
