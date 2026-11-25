@@ -1,19 +1,29 @@
-# GT RACING: HYUNDAI EDITION — PS Vita Port
-
-<p align="center">
-  <img src="extras/livearea/pic0.png" width="700" alt="GT Racing Hyundai Edition PS Vita Banner" />
-</p>
+<h1 align="center">
+  <img src="extras/livearea/pic0.png" alt="GT Racing Hyundai Edition PS Vita Banner" width="700"><br>
+  GT Racing: Hyundai Edition · PS Vita Port
+</h1>
 
 <p align="center">
   <b>Native port of GT Racing: Hyundai Edition (Gameloft) for PlayStation Vita and PlayStation TV.</b>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-PS%20Vita%20%7C%20PS%20TV-003791.svg?style=flat-square&logo=playstation" alt="Platform PS Vita" />
-  <img src="https://img.shields.io/badge/Title%20ID-PSVGTRHE1-ff69b4.svg?style=flat-square" alt="Title ID PSVGTRHE1" />
+  <img src="https://img.shields.io/badge/Platform-PS%20Vita%20%7C%20PS%20TV-003791.svg?style=flat-square&logo=playstation" alt="Platform" />
+  <img src="https://img.shields.io/badge/Origin-Android-3DDC84.svg?style=flat-square&logo=android" alt="Origin" />
+  <img src="https://img.shields.io/badge/Title%20ID-PSVGTRHE1-ff69b4.svg?style=flat-square" alt="Title ID" />
   <img src="https://img.shields.io/badge/Engine-Gameloft%20Proprietary-brightgreen.svg?style=flat-square" alt="Engine" />
   <img src="https://img.shields.io/badge/Renderer-vitaGL%20%28GLES%201.1%29-orange.svg?style=flat-square" alt="Renderer" />
-  <img src="https://img.shields.io/badge/Status-Public%20Beta-yellow.svg?style=flat-square" alt="Status: Public Beta" />
+  <img src="https://img.shields.io/badge/Status-In--game-yellow.svg?style=flat-square" alt="Status" />
+</p>
+
+<p align="center">
+  <a href="#-description">Description</a> •
+  <a href="#-features">Features</a> •
+  <a href="#-controls">Controls</a> •
+  <a href="#-installation">Installation</a> •
+  <a href="#-known-issues">Known Issues</a> •
+  <a href="#-building-from-source">Build</a> •
+  <a href="#-credits">Credits</a>
 </p>
 
 ---
@@ -24,26 +34,73 @@
 
 This port runs the compiled native ARM library (`libGTRacing.so`) from the Android release directly on the PS Vita's ARM Cortex-A9 processor, using a custom dynamic loader (*soloader*) and an Android environment emulation layer (*FalsoJNI*), with [vitaGL](https://github.com/Rinnegatamante/vitaGL) providing hardware-accelerated GLES 1.1 rendering.
 
-### 🎮 Current Status: Public Beta
+---
 
-The game boots, the menus work with touch and buttons, and the first license test / tutorial can be started and driven. This is an **early public beta**. Expect bugs, and please report them with a log (see [Reporting bugs](#-reporting-bugs)).
+## 🎮 Status & Playability
+
+**Status: In-game (v0.1.0-beta)**
+
+The game boots, the menus work with touch and buttons, and the first license test / tutorial can be started and driven. This is an **early public beta**. Expect bugs, and please report them with a log (see [Reporting bugs](#reporting-bugs)).
+
+- [x] **Native ARM execution**: `libGTRacing.so` runs natively on the Vita's CPU, with no emulation of the game logic.
+- [x] **Android lifecycle bootstrap**: `JNI_OnLoad` → `setPaths` → `nativeInit` → `nativeOnCreate/OnStart/OnResume` → surface created/changed at 960x544 → `nativeOnDrawFrame` loop.
+- [x] **OBB read in place**: the 600 MB `main.100.*.obb` is read directly by the engine's ZIP reader, so there is no extraction step.
+- [x] **Native audio**: Gameloft's Vox engine mixes all SFX and music in software and streams them through an emulated `android.media.AudioTrack`, backed by `sceAudioOut` (44.1 kHz stereo) with a dedicated output thread.
+- [ ] **Race loading screen**: the white loading screen before a race is the only known open issue (see [Known Issues](#-known-issues)).
+
+### Release notes: v0.1.0-beta (2026-09-24)
+
+**Package:** `GTRacingHyundaiEdition-Vita-v0.1.0-beta.zip` → `gtracinghyundaiedition.vpk` (Title ID `PSVGTRHE1`, app version 01.00).
+**Game version required:** Android v1.0.0 (`com.gameloft.android.ANMP.GloftGTHY`), `lib/armeabi/libGTRacing.so` + `main.100.*.obb`.
+The full notes are in [`RELEASE_NOTES.md`](RELEASE_NOTES.md).
+
+**Highlights**
+- Boots to the main menu; touch and physical-button navigation work.
+- Recommended scheme: the game's **on-screen controls**, driven by the physical buttons. The brake/accelerator pedal buttons are hidden (transparent) but keep working.
+- The first license test / tutorial can be started and driven.
+- Sound effects and music play through the game's own Vox engine (emulated `AudioTrack` → `sceAudioOut`).
+
+**Fixed since internal builds**
+- **Freeze after the first mandatory tutorial choice**: `rewind`/`fseeko`/`ftello` were resolved to newlib while the game's `FILE*` come from SceLibc. The tracking-file copy loop never ended.
+- **Crash during the tutorial** (data abort in vitaGL `reload_ffp_shaders`): vitaGL now handles runtime shader-compile failures instead of copying from a NULL program.
+- **Texture-combiner state leaking after race post-effects**: implemented `glTexEnviv` and `glGetTexEnvfv`, which were no-ops.
+- **Invalid FFP shader with texture unit 0 disabled** (`undeclared identifier 'texenv0'`): vitaGL built with `UNPURE_TEXCOORDS=1`, FFP shader cache version bumped. This did **not** fix the white loading screen.
+- **Choppy / missing audio**: `AudioTrack` backend rewritten with a 4×1024-frame queue and its own output thread. `play`/`pause`/`stop` are now wired up.
+
+**Performance (safe tweaks)**
+- Pooled read-only file handles for the OBB and `Sounds.pak` (the game reopened them up to ~300 times per second).
+- Buffered log file (previously one write + fsync per line) and no debug-level logging in release builds.
+- Vox mixer and audio output threads pinned to CPU core 1, watchdog on core 2; core 0 stays free for the game and GL.
+- CPU 444 MHz / GPU 222 MHz, vitaGL `DRAW_SPEEDHACK=2`, runtime shader cache in `ux0:data/shader_cache/`.
 
 ---
 
-### ✨ What Works
+## ✨ Features
 
-- **Native ARM Execution**: `libGTRacing.so` runs natively on the Vita's CPU, with no emulation of the game logic.
-- **Android Lifecycle Bootstrap**: `JNI_OnLoad` → `setPaths` → `nativeInit` → `nativeOnCreate/OnStart/OnResume` → surface created/changed at 960x544 → `nativeOnDrawFrame` loop.
-- **OBB read in place**: the 600 MB `main.100.*.obb` is read directly by the engine's ZIP reader, so there is no extraction step.
-- **vitaGL Graphics Pipeline**: GLES 1.1 fixed-function rendering at the Vita's native 960x544, including the texture combiner state used by the race post-effects (`glTexEnviv` / `glGetTexEnvfv`).
-- **Native Audio**: Gameloft's Vox engine mixes all SFX and music in software and streams them through an emulated `android.media.AudioTrack`, backed by `sceAudioOut` (44.1 kHz stereo) with a dedicated output thread.
-- **Physical Controls**: analog stick / D-Pad steering, R/Cross accelerate, L/Square brake, Start pause, Circle back, all driving the on-screen controls (pedal buttons hidden).
-- **Offline-safe**: Gameloft tracking, ads and online services are neutralized or fail fast, so the game never waits on dead servers.
-- **Performance tweaks**: CPU at 444 MHz, audio threads moved off the main core, a pooled file-handle cache for the OBB/`Sounds.pak`, buffered logging, and vitaGL `DRAW_SPEEDHACK=2`.
+| Feature | Status | Notes |
+| :--- | :---: | :--- |
+| Boots to gameplay | ✅ | Boots to the main menu; first license test / tutorial can be started and driven |
+| Graphics / renderer | 🟡 | GLES 1.1 fixed-function at 960x544; white loading screen before races |
+| Audio & music | ✅ | SFX and music through the Vox engine → `sceAudioOut` |
+| Video / cutscenes | ❔ <!-- TODO: verify --> | Not documented in this repo |
+| Physical buttons | ✅ | Drive the on-screen controls (see [Controls](#-controls)) |
+| Analog sticks / camera | ✅ | Left stick / D-Pad steering |
+| Touch screen | ✅ | Full 960x544 touch mapping for menus |
+| Button remapping / port menu | ❔ <!-- TODO: verify --> | Not documented in this repo |
+| Save data | 🧪 | `saves/` folder created by the game; not marked as verified |
+| Native trophies | ❌ | Not implemented |
+| Languages | ❔ <!-- TODO: verify --> | Not documented in this repo |
+| Performance | 🧪 | CPU/GPU clocks and speedhacks documented; no FPS measurements in this repo |
+| Online / IAP / ads | ➖ | Tracking, ads and online services are neutralized (stubbed) |
+| PS TV | 🧪 | Same target as Vita per the description; not separately verified |
+
+Legend: `✅ Working (verified on console) · 🧪 Implemented, not yet verified on console · 🟡 Partial · ❌ Not working · ➖ Not applicable · ❔ Not documented yet`
+
+**Offline-safe**: Gameloft tracking, ads and online services are neutralized or fail fast, so the game never waits on dead servers.
 
 ---
 
-### 🕹️ Controls
+## 🎯 Controls
 
 > ⭐ **Recommended**: use the game's **on-screen controls** scheme (**Options → Controls**, touch / side buttons + pedals; it is the default in this port). The physical buttons drive those on-screen controls directly, so this is the scheme that works best. The brake and accelerator pedals are **hidden** (transparent) to keep the screen clean, but they still work from the buttons below.
 
@@ -58,12 +115,6 @@ The game boots, the menus work with touch and buttons, and the first license tes
 
 ---
 
-### ⚠️ Known Issues
-
-- **White loading screen (only known open issue)**: before a race, the loading screen shows only the track map and the yellow titles. The background image, the dark translucent panel and the rest of the text do not appear, and the screen looks white. The race itself loads and plays. Still under investigation. Enabling vitaGL `UNPURE_TEXCOORDS` did not fix it, and no shader-compile failure dumps (`ffp_fail_*.txt`) are produced there, so it is not a shader-compilation error.
-
----
-
 ## 📋 Prerequisites
 
 1. A PS Vita or PS TV running Custom Firmware (**HENkaku** / **h-encore** / **Enso**), 3.60 or 3.65 recommended.
@@ -74,7 +125,7 @@ The game boots, the menus work with touch and buttons, and the first license tes
 
 ---
 
-## 📦 Installation Instructions
+## 📦 Installation
 
 1. Install `gtracinghyundaiedition.vpk` on your PS Vita using **VitaShell**.
 2. Open the `.apk` as a ZIP archive and extract `lib/armeabi/libGTRacing.so`.
@@ -101,7 +152,11 @@ ux0:data/gtracinghyundaiedition/
 
 ---
 
-## 🐞 Reporting bugs
+## 🐛 Known Issues
+
+- **White loading screen (only known open issue)**: before a race, the loading screen shows only the track map and the yellow titles. The background image, the dark translucent panel and the rest of the text do not appear, and the screen looks white. The race itself loads and plays. Still under investigation. Enabling vitaGL `UNPURE_TEXCOORDS` did not fix it, and no shader-compile failure dumps (`ffp_fail_*.txt`) are produced there, so it is not a shader-compilation error.
+
+### Reporting bugs
 
 Every launch writes a numbered log to `ux0:data/gtracinghyundaiedition/logs/` (`001.log`, `002.log`, ...). When reporting a problem, please attach:
 
@@ -112,9 +167,9 @@ Every launch writes a numbered log to `ux0:data/gtracinghyundaiedition/logs/` (`
 
 ---
 
-## 🛠️ Building from Source
+## 🔨 Building from Source
 
-### Build Prerequisites
+### Prerequisites
 
 - [VitaSDK](https://vitasdk.org/) (softfp toolchain).
 - Vita portlibs: `vitashark`, `kubridge`, `pthread`.
@@ -138,7 +193,7 @@ This generates `eboot.bin` and `gtracinghyundaiedition.vpk` in the build directo
 
 ---
 
-## 🏗️ Project Structure
+## 📁 Project Structure
 
 - `source/`: native loader (lifecycle, JNI stubs, GL wrappers, AudioTrack backend, input, binary patches).
 - `lib/`: auxiliary libraries (`so_util`, `falso_jni`, `libc_bridge`, `kubridge`, `fios`, `sha1`, `vitagl`).
@@ -150,7 +205,7 @@ This generates `eboot.bin` and `gtracinghyundaiedition.vpk` in the build directo
 
 ---
 
-## ⚖️ Disclaimer
+## 📜 Disclaimer
 
 **GT Racing** and **Hyundai** are registered trademarks of their respective owners (Gameloft and Hyundai Motor Company). This project is an unofficial port. It is not affiliated with, endorsed by, or produced by Gameloft or Hyundai.
 
@@ -179,7 +234,7 @@ This project is **free** and will stay free. If you enjoy it, a tip from **$1** 
 
 ---
 
-## 👥 Credits and Acknowledgements
+## 👥 Credits
 
 - **Gameloft**: original developers of GT Racing: Hyundai Edition.
 - **TheFloW**: for `so_util`, `kubridge`, `FdFix`, and the foundational Android soloader techniques.
@@ -189,6 +244,8 @@ This project is **free** and will stay free. If you enjoy it, a tip from **$1** 
 
 ---
 
-## License
+## 📄 License
 
 This software is distributed under the terms of the MIT License. See [LICENSE](LICENSE) for details.
+
+The vendored vitaGL in `lib/vitagl` is distributed under the GNU GPL v3 and the GNU LGPL v3 (`lib/vitagl/COPYING` and `lib/vitagl/COPYING.LESSER`).
